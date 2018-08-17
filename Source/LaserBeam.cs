@@ -66,6 +66,13 @@ namespace Rimlaser
             Log.Message("Original angle of beam: " + beamAngle.ToString());
             Log.Message("Impact angle on shield: " + impactAngle.ToString());
 
+            Vector3 prevOffset = new Vector3(0,0,0); //Start beam warping effect from impact site
+            for (int i = 4; i > 0; i--)
+            {
+                Vector3 offset = new Vector3(Mathf.Sin(Mathf.PI/i) * 0.8f, 0, Mathf.Cos(Mathf.PI/i) * 0.6f).RotatedBy(beamAngle);
+                SpawnBeam(b + prevOffset, b + offset);
+                prevOffset = offset;
+            }
         }
 
         protected override void Impact(Thing hitThing)

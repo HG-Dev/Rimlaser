@@ -32,11 +32,6 @@ namespace Rimlaser
             effecter.Cleanup();
         }
 
-        /// <summary>
-        /// Spawns a LaserBeamGraphic object utilizing settings obtained
-        /// from a weapon held by a launcher or launcher itself,
-        /// plus an exact origin and destination Vector3.
-        /// </summary>
         /// <param name="a">Origin</param>
         /// <param name="b">Destination</param>
         void SpawnBeam(Vector3 a, Vector3 b)
@@ -60,10 +55,10 @@ namespace Rimlaser
             }
         }
 
-        void SpawnBeamRefractions(LaserBeam original, Thing shieldedThing)
+        void SpawnBeamRefractions(Vector3 a, Vector3 b, Thing shieldedThing)
         {
-            Vector3 beamOrigin = (original.ExactPosition - original.origin);
-            Vector3 impactOrigin = (original.ExactPosition - original.launcher.TrueCenter());
+            Vector3 beamOrigin = (b - a);
+            Vector3 impactOrigin = (shieldedThing.TrueCenter() - b);
             float impactSiteAngle = impactOrigin.AngleFlat();
             float beamAngle = beamOrigin.AngleFlat();
             float impactAngle = impactSiteAngle - beamAngle;
@@ -111,7 +106,7 @@ namespace Rimlaser
                         weaponDamageMultiplier *= def.shieldDamageMultiplier;
 
                         SpawnBeamReflections(a, b, 5);
-                        SpawnBeamRefractions(this, hitThing);
+                        SpawnBeamRefractions(a, b, hitThing);
                     }
                 }
 

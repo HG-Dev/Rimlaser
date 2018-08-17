@@ -32,6 +32,13 @@ namespace Rimlaser
             effecter.Cleanup();
         }
 
+        /// <summary>
+        /// Spawns a LaserBeamGraphic object utilizing settings obtained
+        /// from a weapon held by a launcher or launcher itself,
+        /// plus an exact origin and destination Vector3.
+        /// </summary>
+        /// <param name="a">Origin</param>
+        /// <param name="b">Destination</param>
         void SpawnBeam(Vector3 a, Vector3 b)
         {
             LaserBeamGraphic graphic = ThingMaker.MakeThing(def.beamGraphic, null) as LaserBeamGraphic;
@@ -47,14 +54,28 @@ namespace Rimlaser
             for (int i = 0; i < count; i++)
             {
                 Vector3 dir = (b - a).normalized;
-                Vector3 c = b - dir.RotatedBy(Rand.Range(-22.5f,22.5f)) * Rand.Range(1f,4f);
+                Vector3 c = b - dir.RotatedBy(Rand.Range(-22.5f, 22.5f)) * Rand.Range(1f, 4f);
 
                 SpawnBeam(b, c);
             }
         }
 
+        void SpawnBeamRefractions(LaserBeam original, Thing shieldedThing)
+        {
+            Vector3 beamOrigin = (original.ExactPosition - original.origin);
+            Vector3 impactOrigin = (original.ExactPosition - original.launcher.TrueCenter());
+            float impactSiteAngle = impactOrigin.AngleFlat();
+            float beamAngle = beamOrigin.AngleFlat();
+            float impactAngle = impactSiteAngle - beamAngle;
+            Log.Message("Impact angle per shield center: " + impactSiteAngle.ToString());
+            Log.Message("Original angle of beam: " + beamAngle.ToString());
+            Log.Message("Impact angle on shield: " + impactAngle.ToString());
+
+        }
+
         protected override void Impact(Thing hitThing)
         {
+            Log.Message("IMPACT!");
             LaserGunDef defWeapon = equipmentDef as LaserGunDef;
             Vector3 dir = (destination - origin).normalized;
             Vector3 a = origin + dir * (defWeapon == null ? 0.9f : defWeapon.barrelLength);
@@ -87,6 +108,7 @@ namespace Rimlaser
                         weaponDamageMultiplier *= def.shieldDamageMultiplier;
 
                         SpawnBeamReflections(a, b, 5);
+                        SpawnBeamRefractions(this, hitThing);
                     }
                 }
 

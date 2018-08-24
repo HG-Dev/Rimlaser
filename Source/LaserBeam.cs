@@ -10,6 +10,19 @@ namespace Rimlaser
     public class LaserBeam : Bullet
     {
         new LaserBeamDef def => base.def as LaserBeamDef;
+        Thing Emitter => base.launcher.EquipmentOrBuilding();
+        
+        public float Range
+        {
+            get
+            {
+                if (!Emitter.def.Verbs.NullOrEmpty<VerbProperties>())
+                {
+                    return Emitter.def.Verbs[0].range;
+                }
+                return 0f;
+            }
+        }
 
         public override void Draw()
         {
@@ -40,7 +53,7 @@ namespace Rimlaser
             if (graphic == null) return;
 
             graphic.def = def;
-            graphic.Setup(launcher, a, b);
+            graphic.Setup(Emitter, a, b);
             GenSpawn.Spawn(graphic, origin.ToIntVec3(), Map, WipeMode.Vanish);
         }
 
@@ -59,25 +72,48 @@ namespace Rimlaser
         {
             Vector3 beamOrigin = (b - a);
             Vector3 impactOrigin = (shieldedThing.TrueCenter() - b);
+            Vector3 warpCenter = b + (impactOrigin * 2);
+            float leftoverRange = Range - beamOrigin.magnitude;
             float impactSiteAngle = impactOrigin.AngleFlat();
             float beamAngle = beamOrigin.AngleFlat();
-            float impactAngle = impactSiteAngle - beamAngle;
-            Log.Message("Impact angle per shield center: " + impactSiteAngle.ToString());
-            Log.Message("Original angle of beam: " + beamAngle.ToString());
-            Log.Message("Impact angle on shield: " + impactAngle.ToString());
+            float impactAngle = (impactSiteAngle - beamAngle);
+            int impactAngleInt;
+            //Restrict impact angle to -90 ~ 90 degrees
+            if (impactAngle < -90) impactAngle += 360;
+            if (impactAngle >  90) impactAngle -= 360;
+            if (impactAngle > 0)
+                impactAngleInt = Mathf.CeilToInt(impactAngle);
+            else
+                impactAngleInt = Mathf.FloorToInt(impactAngle);
+            int dir = Mathf.Clamp(impactAngleInt, -1, 1);
 
-            Vector3 prevOffset = new Vector3(0,0,0); //Start beam warping effect from impact site
-            for (int i = 4; i > 0; i--)
+            Vector3 prevPos = b; //Start beam warping effect from impact site
+            Vector3 offset;
+            int segments = 10;
+            for (int i = 1; i <= segments; i++)
             {
-                Vector3 offset = new Vector3(Mathf.Sin(Mathf.PI/i) * 0.8f, 0, Mathf.Cos(Mathf.PI/i) * 0.6f).RotatedBy(beamAngle);
-                SpawnBeam(b + prevOffset, b + offset);
-                prevOffset = offset;
+                offset = new Vector3(
+                    Mathf.Sin((Mathf.PI * 0.42f * -dir) * i / segments) * Mathf.Lerp(0.5f, 0.9f, (impactAngle + 90) / 180), 0,
+                    Mathf.Cos((Mathf.PI * 0.42f) * i / segments) * impactOrigin.magnitude * -1.7f);
+                offset = offset.RotatedBy(impactOrigin.AngleFlat());
+                
+                if (i != segments)
+                {
+                    SpawnBeam(prevPos, warpCenter + offset);
+                }
+                else //Spawn final offshoot beam
+                {
+                    Vector3 finalOffset = (warpCenter + offset - prevPos).normalized * leftoverRange;
+                    IntVec3 targeted = (prevPos + finalOffset).ToIntVec3();
+
+                    SpawnBeam(prevPos, prevPos + finalOffset);
+                }
+                prevPos = warpCenter + offset;
             }
         }
 
         protected override void Impact(Thing hitThing)
         {
-            Log.Message("IMPACT!");
             bool shielded = hitThing.IsShielded() && def.IsWeakToShields;
             LaserGunDef defWeapon = equipmentDef as LaserGunDef;
             Vector3 dir = (destination - origin).normalized;
@@ -89,10 +125,7 @@ namespace Rimlaser
 
             SpawnBeam(a, b);
 
-            Pawn pawn = launcher as Pawn;
-            IDrawnWeaponWithRotation weapon = null;
-            if (pawn != null && pawn.equipment != null) weapon = pawn.equipment.Primary as IDrawnWeaponWithRotation;
-            if (weapon == null) weapon = launcher as IDrawnWeaponWithRotation;
+            IDrawnWeaponWithRotation weapon = Emitter as IDrawnWeaponWithRotation;
             if (weapon != null)
             {
                 float angle = (b - a).AngleFlat() - (intendedTarget.CenterVector3 - a).AngleFlat();
@@ -112,7 +145,7 @@ namespace Rimlaser
                     {
                         weaponDamageMultiplier *= def.shieldDamageMultiplier;
 
-                        SpawnBeamReflections(a, b, 5);
+                        //SpawnBeamReflections(a, b, 5);
                         SpawnBeamRefractions(a, b, hitThing);
                     }
                 }

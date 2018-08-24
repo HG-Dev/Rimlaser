@@ -86,7 +86,7 @@
     
     <category>Projectile</category>
     <tickerType>Normal</tickerType>
-    <altitudeLayer>Projectile</altitudeLayer>
+    <altitudeLayer>MoteOverhead</altitudeLayer>
     <useHitPoints>False</useHitPoints>
     <neverMultiSelect>True</neverMultiSelect>
   </ThingDef>

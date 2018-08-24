@@ -26,5 +26,12 @@ namespace Rimlaser
 
             return false;
         }
+
+        public static Thing EquipmentOrBuilding(this Thing pawnOrBuilding)
+        {
+            Pawn pawn = pawnOrBuilding as Pawn;
+            if (pawn != null && pawn.equipment != null) return pawn.equipment.Primary;
+            return pawnOrBuilding;
+        }
     }
 }

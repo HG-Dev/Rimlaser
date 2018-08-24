@@ -40,13 +40,9 @@ namespace Rimlaser
             }
         }
 
-        void SetColor(Thing launcher)
+        void SetColor(Thing device)
         {
-            IBeamColorThing gun = null;
-
-            Pawn pawn = launcher as Pawn;
-            if (pawn != null && pawn.equipment != null) gun = pawn.equipment.Primary as IBeamColorThing;
-            if (gun == null) gun = launcher as IBeamColorThing;
+            IBeamColorThing gun = device as IBeamColorThing;
 
             if (gun != null && gun.BeamColor != -1)
             {
@@ -54,9 +50,9 @@ namespace Rimlaser
             }
         }
 
-        public void Setup(Thing launcher, Vector3 origin, Vector3 destination)
+        public void Setup(Thing device, Vector3 origin, Vector3 destination)
         {
-            SetColor(launcher);
+            SetColor(device);
 
             a = origin;
             b = destination;
@@ -68,7 +64,7 @@ namespace Rimlaser
 
             materialBeam = def.GetBeamMaterial(colorIndex) ?? def.graphicData.Graphic.MatSingle;
 
-            float beamWidth = def.beamWidth;
+            float beamWidth = def.beamWidth * 0.2f;
             Quaternion rotation = Quaternion.LookRotation(b - a);
             Vector3 dir = (b - a).normalized;
             float length = (b - a).magnitude;
